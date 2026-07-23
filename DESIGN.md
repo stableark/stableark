@@ -8,8 +8,9 @@ This note describes a protocol idea for self-custodial, dollar-indexed bitcoin b
 
 **Related notes**
 
-- [Implementation landscape](notes/implementation-landscape.md) — how current stacks differ
-- [Bilateral atomic multi-input spends](notes/bilateral-atomic-oor.md) — why the joint-update primitive matters
+- [Stack comparison](notes/stack-comparison.md) — Bark vs Arkade vs Wavelength (general)
+- [Implementation landscape](notes/implementation-landscape.md) — how current stacks differ for Stable Ark
+- [Joint multi-input spends](notes/bilateral-atomic-oor.md) — why the joint-update primitive matters
 
 ---
 

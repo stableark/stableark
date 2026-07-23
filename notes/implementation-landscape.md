@@ -8,6 +8,8 @@ Alice VTXO + Bob VTXO  →  new Alice VTXO + new Bob VTXO
 
 This note records implementer guidance and public docs. It is not an official statement by any vendor.
 
+For a broader product/architecture comparison (not only Stable Ark), see [stack-comparison.md](stack-comparison.md).
+
 ---
 
 ## Summary

@@ -11,7 +11,8 @@ Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, pai
 - Project home: [https://stableark.org](https://stableark.org)
 - Source: [https://github.com/stableark/stableark](https://github.com/stableark/stableark)
 - Design note: [DESIGN.md](DESIGN.md)
-- Implementation landscape: [notes/implementation-landscape.md](notes/implementation-landscape.md)
+- Stack comparison (Bark vs Arkade vs Wavelength): [notes/stack-comparison.md](notes/stack-comparison.md)
+- Implementation landscape (Stable Ark–focused): [notes/implementation-landscape.md](notes/implementation-landscape.md)
 - Joint multi-input primitive: [notes/bilateral-atomic-oor.md](notes/bilateral-atomic-oor.md)
 - Domain / Pages setup: [DOMAIN.md](DOMAIN.md)
 
