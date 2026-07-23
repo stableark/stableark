@@ -1,6 +1,6 @@
 # Why Ark should support bilateral atomic OOR
 
-**Audience:** Ark implementers (client + server)  
+**Audience:** Ark protocol implementers (clients and operators)  
 **Topic:** Bilateral atomic out-of-round spends as a general protocol primitive
 
 ---
@@ -77,37 +77,37 @@ That is consistent with Ark’s existing design philosophy; it just completes it
 
 ---
 
-## Why this is good for an Ark implementation / ASP
+## Why this is good for Ark implementations
 
-Framed around the operator and client stack — not around any one app:
+Framed for any client/operator stack — not for one product or one application:
 
-1. **More expressive apps on the same server**  
+1. **More expressive apps on unmodified operators**  
    Wallets and protocols can build contracts that feel like off-chain UTXO renegotiation, not only chat-style payments.
 
 2. **Higher useful OOR volume**  
-   Shared positions generate many small updates over their lifetime. That is recurring OOR demand for the ASP, not one-shot payments.
+   Shared positions generate many small updates over their lifetime. That is recurring OOR demand for operators, not only one-shot payments.
 
 3. **Less pressure to abuse rounds as an application clock**  
-   If every joint update waits for a round, apps become fragile to round timing, availability, and fees. Giving them an off-round joint update keeps rounds focused on what they are good at.
+   If every joint update waits for a round, apps become fragile to round timing, availability, and fees. An off-round joint update keeps rounds focused on lifecycle work.
 
 4. **Cleaner client recovery stories**  
    Atomic successor states are easier to reason about than “Alice paid, Bob didn’t consolidate, sequence is ambiguous, exit needs N VTXOs.”
 
-5. **Differentiation**  
-   “Ark is programmable off-chain bitcoin” is stronger if two users can renegotiate ownership of existing VTXOs atomically, not only send value one way.
+5. **Stronger protocol positioning**  
+   “Ark is programmable off-chain bitcoin” is more convincing if two users can renegotiate ownership of existing VTXOs atomically, not only send value one way.
 
 6. **No need for app-specific operators**  
-   The server does not need to understand oracles, USD, or contract semantics. It only needs to co-sign a multi-owner OOR package. Apps stay on public Ark servers.
+   The operator does not need to understand oracles, prices, or contract semantics. It only needs to co-sign a multi-owner OOR package. Apps can stay on public Ark servers.
 
-7. **Fits the security model you already have**  
-   OOR already has operator co-sign and statechain-like assumptions. Bilateral OOR is the same family of mechanism with richer input ownership, not a new trust island.
+7. **Fits the security model Ark already has**  
+   OOR already involves operator co-sign and statechain-like assumptions. Bilateral OOR is the same family of mechanism with richer input ownership, not a new trust island.
 
 ---
 
 ## What this is not asking for
 
 - Not replacing rounds
-- Not putting business logic (prices, collateral rules, contract types) into the ASP
+- Not putting business logic (prices, collateral rules, contract types) into the operator
 - Not requiring a custom coordinator per application
 - Not blocking apps that start with directional OOR + later round consolidation
 
@@ -117,9 +117,11 @@ Directional OOR remains the right default for payments. Bilateral atomic OOR is 
 
 ## Concrete implementation questions
 
+Useful against any current stack:
+
 1. Can the OOR transaction builder already accept **multiple checkpoint inputs controlled by different owner keys**?
-2. Does server-side OOR session / co-sign flow assume a single sender, or can it orchestrate multi-owner signing?
-3. If not: what is the minimal RPC and FSM change for an `N-input / M-output` package where two clients both sign?
+2. Does operator-side OOR session / co-sign flow assume a single sender, or can it orchestrate multi-owner signing?
+3. If not: what is the minimal RPC and state-machine change for an `N-input / M-output` package where two clients both sign?
 
 Even a narrowly scoped 2-in / 2-out path would unlock a large class of applications.
 
