@@ -2,7 +2,7 @@
 
 **Status:** research / pre-PoC  
 **Home:** [https://stableark.org](https://stableark.org)  
-**Source:** [https://github.com/stableark/stable-ark](https://github.com/stableark/stable-ark)
+**Source:** [https://github.com/stableark/stableark](https://github.com/stableark/stableark)
 
 This note describes a protocol idea for self-custodial, dollar-indexed bitcoin balances on Ark. It is intentionally a design note, not a whitepaper or product announcement. Feedback from Ark implementers and Bitcoin protocol reviewers is welcome.
 
@@ -261,7 +261,7 @@ Success criterion: show that the economic mechanism maps onto real Ark OOR/round
 Stable Ark is at the **design note** stage. Next engineering work is a bilateral OOR reprice prototype against an existing Ark client, followed by a written threat-model review.
 
 Project home: [https://stableark.org](https://stableark.org)  
-Canonical source: [https://github.com/stableark/stable-ark](https://github.com/stableark/stable-ark)
+Canonical source: [https://github.com/stableark/stableark](https://github.com/stableark/stableark)
 
 ### Acknowledgements
 

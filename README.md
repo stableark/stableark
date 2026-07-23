@@ -9,7 +9,7 @@ Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, pai
 ## Links
 
 - Project home: [https://stableark.org](https://stableark.org)
-- Source: [https://github.com/stableark/stable-ark](https://github.com/stableark/stable-ark)
+- Source: [https://github.com/stableark/stableark](https://github.com/stableark/stableark)
 - Design note: [DESIGN.md](DESIGN.md)
 
 ## Non-goals
