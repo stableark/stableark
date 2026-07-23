@@ -1,29 +1,38 @@
 # Stable Ark — Design Note
 
-**Status:** research / pre-PoC  
+**Status:** research / pre-PoC (Arkade-first)  
 **Home:** [https://stableark.org](https://stableark.org)  
 **Source:** [https://github.com/stableark/stableark](https://github.com/stableark/stableark)
 
-This note describes a protocol idea for self-custodial, dollar-indexed bitcoin balances on Ark. It is intentionally a design note, not a whitepaper or product announcement. Feedback from Ark implementers and Bitcoin protocol reviewers is welcome.
+This note describes a protocol idea for self-custodial, dollar-indexed bitcoin balances on Bitcoin’s Ark-family offchain VTXO systems. It is intentionally a design note, not a whitepaper or product announcement. Feedback from implementers is welcome.
+
+**Related notes**
+
+- [Implementation landscape](notes/implementation-landscape.md) — how current stacks differ
+- [Bilateral atomic multi-input spends](notes/bilateral-atomic-oor.md) — why the joint-update primitive matters
 
 ---
 
 ## 1. Abstract
 
-Stable Ark is a protocol that enables self-custodial, dollar-denominated balances on Bitcoin using Ark virtual transaction outputs (VTXOs) instead of Lightning channels. Two participants exchange BTC price risk through coordinated off-chain state updates: one side holds a USD-indexed claim, the other takes leveraged exposure. Settlement remains entirely in bitcoin. Frequent rebalancing uses Ark’s existing out-of-round (OOR) transfer mechanism; Ark rounds periodically renew VTXO expiry, shorten exit paths, and restore the stronger refresh-VTXO security model.
+Stable Ark enables self-custodial, dollar-denominated balances on Bitcoin using virtual transaction outputs (VTXOs) instead of Lightning channels. Two participants exchange BTC price risk through coordinated offchain state updates: one side holds a USD-indexed claim, the other takes leveraged exposure. Settlement remains entirely in bitcoin.
+
+Frequent rebalancing is a **joint multi-input / multi-output offchain transaction**: both parties spend their current position VTXOs and receive updated allocations in one atomic package, co-signed by the Ark operator as required. Lifecycle renewal (expiry, tree compression, stronger finality) uses each implementation’s batch/settlement path (rounds, batch swaps / intents, etc.).
+
+Terminology differs across implementations. This note uses *joint offchain reallocation* for the financial update. Where a stack calls the same idea “OOR/arkoor,” “Arkade transaction,” or something else, the mapping is noted in [implementation landscape](notes/implementation-landscape.md).
 
 ## 2. Motivation
 
 Demand for dollar-stable value on Bitcoin is persistent. Custodial stablecoins meet that demand with issuer and banking trust. Tokenized assets on Bitcoin rails (for example Taproot Assets or Arkade Assets) meet it with issuance and indexing assumptions. A third path—used by [Stable Channels](https://stablechannels.com/) on Lightning—creates *synthetic* dollar exposure by frequently redistributing sats between a stability seeker and a leveraged counterparty inside an overcollateralized channel, without issuing a token.
 
-Stable Channels proves the economic primitive. Ark may improve the operational fit:
+Stable Channels proves the economic primitive. Ark-family VTXOs may improve the operational fit:
 
 - VTXOs are easier to receive and spend than managing Lightning channel liquidity.
 - Users do not need inbound liquidity or channel topology for the stability product itself.
-- Many positions can share Ark’s batch lifecycle for refresh, collateral adjustment, and settlement.
+- Many positions can share batch settlement for renewal, collateral adjustment, and exits.
 - Market makers may eventually service many stable users from pooled liquidity rather than one channel per user.
 
-Stable Ark is therefore not merely “Stable Channels ported to Ark.” It aims to use Ark’s payment and refresh semantics as the native settlement fabric for the same economic trade.
+Stable Ark is therefore not merely “Stable Channels ported to Ark.” It aims to use VTXO semantics as the native settlement fabric for the same economic trade.
 
 ## 3. Core principle
 
@@ -37,16 +46,18 @@ There is no Stable Ark token. There is only bitcoin, allocated between counterpa
 | --- | --- |
 | **Stable receiver** | Wants a claim whose BTC amount tracks a fixed USD value. |
 | **Risk provider** | Posts excess BTC collateral and takes (typically long) BTC price exposure. |
-| **Ark operator** | Runs rounds, co-signs OOR checkpoints as required by the Ark deployment, provides liquidity for refresh/boarding—not a custodian of user keys. |
+| **Ark operator** | Co-signs offchain transactions / coordinates batch settlement as required by the deployment—not a custodian of user keys. |
 | **Price oracle** | Publishes BTC/USD observations that clients verify independently. |
 | **Matching coordinator** (optional) | Helps find counterparties or net pool exposure; must not be required for unilateral exit. |
 | **Watchtower** (optional) | Monitors for on-chain spends of position ancestors and assists exits. |
 
-Critical invariant: either participant must be able to exit using locally held recovery material, without trusting the coordinator or the other party’s liveness forever.
+Critical invariant: either participant must be able to exit using locally held recovery material, without trusting the matching coordinator or the other party’s liveness forever.
+
+**Important:** Stable Ark does **not** require a custom operator. Two users running Stable Ark clients should connect to a normal public operator for that stack.
 
 ## 5. Position model
 
-A position is represented by **two jointly updated VTXOs** (or an equivalent multi-output OOR package) owned by the stable receiver and the risk provider.
+A position is represented by **two jointly updated VTXOs** owned by the stable receiver and the risk provider.
 
 At open:
 
@@ -69,55 +80,64 @@ Two kinds of “refresh” must not be conflated.
 
 | Kind | Purpose | Mechanism |
 | --- | --- | --- |
-| **Financial refresh** | Reallocate sats after a price change | Bilateral OOR spend |
-| **Ark refresh** | Renew expiry, shorten exit chain, restore refresh-VTXO trust | Ark round |
+| **Financial refresh** | Reallocate sats after a price change | Joint multi-input / multi-output offchain tx |
+| **Lifecycle refresh** | Renew expiry, shorten exit path, restore stronger settlement security | Batch settlement (rounds / batch swaps / intents) |
 
 ```mermaid
 flowchart TD
   oracle[OracleObservation]
   propose[UpdateProposal]
   validate[BothPartiesValidate]
-  oor[BilateralOORSpend]
+  jointTx[JointOffchainReallocation]
   state[NewVTXOAllocations]
-  round[PeriodicRoundRefresh]
+  batch[LifecycleBatchSettlement]
 
-  oracle --> propose --> validate --> oor --> state
-  state -->|"expiry or depth"| round
-  round --> state
+  oracle --> propose --> validate --> jointTx --> state
+  state -->|"expiry or depth"| batch
+  batch --> state
 ```
 
-### 6.1 Financial refresh (OOR)
+### 6.1 Financial refresh (joint offchain reallocation)
 
-Ark already allows users to transfer value between rounds by extending the off-chain transaction tree (OOR / arkoor). Stable Ark reuses that mechanism for *joint* reallocation:
+Ideal update shape:
+
+```text
+Alice position VTXO + Bob position VTXO
+        →
+new Alice allocation + new Bob allocation
+```
+
+Both parties are active input owners. The operator co-signs as required by the stack. The transaction is not mined in the collaborative path; it extends offchain VTXO state.
+
+Protocol steps:
 
 1. Oracle observation is obtained and verified by both parties.
 2. An update proposal computes new allocations and binds `position_id`, sequence, price, timestamp, and policy hash.
 3. Both parties validate conservation, collateral, sequence, and oracle rules.
-4. A bilateral OOR package consumes the current position VTXOs and creates updated outputs for each party (plus any agreed fee outputs).
-5. The operator participates only as required by the underlying OOR protocol (typically checkpoint co-signing).
-6. Each party retains the new state and recovery material for unilateral exit.
+4. Both sign their inputs; the operator co-signs.
+5. Each party retains the new state and recovery material for unilateral exit.
 
-Ordinary OOR payments are directional (sender → recipient + change). A Stable Ark update is **bilateral**: two active input owners, negotiated outputs. Existing OOR transaction builders that already support multiple checkpoint inputs and multiple recipients are a promising foundation; the missing piece is a durable multi-party signing protocol, not a new consensus layer.
+**Fallback (if a stack only supports one-input payments):** the party who owes can send a directional payment, and both wallets treat it as a mark only if it matches policy. Lifecycle batch settlement later consolidates fragments. This is acceptable for early experiments on one-input-only stacks, but it is not the preferred state model.
 
-### 6.2 Ark round refresh
+### 6.2 Lifecycle refresh (batch settlement)
 
-Rounds batch users who forfeit old VTXOs and receive new refresh VTXOs. Stable Ark should use rounds to:
+Depending on the implementation, users periodically forfeit old VTXOs and receive renewed outputs via rounds or intent-driven batch swaps. Stable Ark should use that path to:
 
-- renew expiry before VTXOs become sweepable by the operator,
-- compress long OOR chains (lower unilateral-exit cost and fewer ancestor trust assumptions),
+- renew expiry before funds become sweepable under operator policy,
+- compress long offchain chains (lower unilateral-exit cost),
 - optionally adjust collateral, open/close positions in batch, or net pooled exposure.
 
-Rounds are the settlement and lifecycle layer—not the price-update clock.
+Batch settlement is the lifecycle layer—not the price-update clock.
 
 ## 7. Mechanism mapping
 
 | Stable Channels | Stable Ark |
 | --- | --- |
 | Lightning channel | Paired position VTXOs |
-| Frequent channel balance updates | Bilateral OOR spends |
-| Force close | Unilateral exit / unroll package |
-| Channel liquidity management | Ark boarding, OOR, and round refresh |
-| CLN/plugin coordination | Client-side Stable Ark coordinator + Ark SDK |
+| Frequent channel balance updates | Joint offchain reallocations |
+| Force close | Unilateral exit package |
+| Channel liquidity management | Boarding + offchain txs + batch settlement |
+| CLN/plugin coordination | Client-side Stable Ark logic + stack SDK |
 
 ## 8. Oracle and allocation
 
@@ -145,13 +165,13 @@ require risk_sats >= min_collateral(...)
 
 ## 9. Liquidation and liveness
 
-If BTC falls quickly, the risk provider’s excess collateral can be exhausted. Waiting for the next Ark round is not an acceptable sole liquidation path.
+If BTC falls quickly, the risk provider’s excess collateral can be exhausted. Waiting for the next batch settlement is not an acceptable sole liquidation path.
 
 Stable Ark therefore needs:
 
-1. **Off-round updates** as the normal path to keep the position marked.
+1. **Offchain joint (or directional) updates** as the normal path to keep the position marked.
 2. **Collateral buffers** sized for oracle delay, signing delay, and worst-case time to emergency close.
-3. **Emergency cooperative close** via OOR or cooperative leave when thresholds are breached.
+3. **Emergency cooperative close** when thresholds are breached.
 4. **Unilateral exit** using the latest valid recovery package if the counterparty or operator stalls.
 
 Policy sketch:
@@ -165,20 +185,20 @@ required_collateral =
   + exit_fee_buffer
 ```
 
-Exact parameters require simulation; the design only requires that liquidation not depend exclusively on operator round schedule.
+Exact parameters require simulation; the design only requires that liquidation not depend exclusively on operator batch schedule.
 
 ## 10. Trust and threat model
 
 ### What users keep
 
 - Keys to their VTXOs.
-- Ability to unilaterally exit with locally held transaction packages (subject to Ark’s exit costs and delays).
+- Ability to unilaterally exit with locally held transaction packages (subject to the stack’s exit costs and delays).
 
-### What OOR adds
+### What collaborative offchain spends add
 
-OOR spend VTXOs inherit a statechain-like trust assumption: receivers rely on prior owners and the Ark operator not colluding to double-spend an ancestor. Each additional OOR hop lengthens the unilateral exit path and expands the set of earlier parties in the trust set.
+Collaborative offchain spends typically inherit a statechain-like trust assumption: later holders rely on prior owners and the operator not colluding to double-spend an ancestor. Each additional hop can lengthen the unilateral exit path.
 
-Stable Ark improves this relative to arbitrary payment chains by keeping the repeated update chain between **the same two participants and the operator**. It does not eliminate operator honesty assumptions for OOR, nor exit-cost growth. Periodic round refresh is the intended remedy.
+Stable Ark improves this relative to arbitrary payment chains by keeping the repeated update chain between **the same two participants and the operator**. It does not eliminate operator honesty assumptions, nor exit-cost growth. Lifecycle batch settlement is the intended remedy.
 
 ### Threats to analyze in the PoC
 
@@ -188,52 +208,67 @@ Stable Ark improves this relative to arbitrary payment chains by keeping the rep
 | Stale state broadcast | Attempt to exit from superseded ancestor |
 | Incomplete bilateral update | One party aborts after gaining asymmetric advantage |
 | Oracle failure / manipulation | Incorrect allocation or frozen marks |
-| Operator censorship | Refusal to co-sign OOR or admit refresh |
+| Operator censorship | Refusal to co-sign or admit settlement |
 | Collateral exhaustion | Price move faster than update/liquidation path |
 | Coordinator compromise | Privacy loss or matching failure; must not steal funds |
 
-Fraud monitoring that watches OOR ancestors on-chain (as in mature Ark clients) is directly relevant and should be reused rather than reinvented.
+## 11. Why not batch-settlement-as-clock
 
-## 11. Why not rounds-as-clock
-
-Requiring every price mark to wait for an Ark round would:
+Requiring every price mark to wait for a round / batch swap would:
 
 - force high participant availability,
 - put liquidations on the operator’s schedule,
 - increase fees and operator liquidity demand,
-- couple Stable Ark reliability to round cadence.
+- couple Stable Ark reliability to batch cadence.
 
-Ark implementations already treat OOR as the payment path and rounds as refresh. Stable Ark follows that split: **OOR for repricing; rounds for renewal, compression, and batch settlement.**
+Stable Ark follows: **joint offchain reallocation for repricing; batch settlement for renewal, compression, and stronger finality.**
 
 ## 12. Non-goals
 
 - **Not a stablecoin.** No issued token representing dollars.
-- **Not a new Ark node.** Do not reimplement rounds, trees, or operator consensus.
+- **Not a new Ark operator.** Do not reimplement operator consensus or batch coordination.
 - **Not Taproot Assets / Arkade Assets issuance.** Those are complementary “issued stable” paths; Stable Ark is synthetic exposure via bitcoin reallocation.
 - **Not mainnet finance.** Pre-PoC research only until threat model and exit paths are demonstrated.
 
 ## 13. Implementation stance
 
-Build Stable Ark **against** Ark, not inside the operator, until a missing primitive is proven unavoidable.
+Build Stable Ark **against** an existing stack, not inside the operator, until a missing primitive is proven unavoidable.
 
-Recommended first study target: [Lightning Labs Wavelength](https://github.com/lightninglabs/wavelength), because it already separates durable OOR session FSMs, checkpoint construction, package submit/finalize, VTXO lifecycle, fraud watching, and unilateral unroll. Second/Bark remains an important parallel evaluation path, especially for Rust-first workflows.
+### Primary target: Arkade
 
-Stable Ark-specific logic should live in a separate layer:
+[Arkade](https://docs.arkadeos.com) is the first implementation target. Current implementer guidance (July 2026):
+
+- Offchain transactions follow a **Bitcoin UTXO model** (multi-input / multi-output).
+- Distinct owners can sign distinct inputs in the **same** Arkade transaction; the operator co-signs; the tx is not broadcast to miners in the collaborative path.
+- Sending is not modeled as in-round payments; lifecycle uses an **intent / batch-swap** system rather than requiring periodic rounds to move value.
+- SDKs exist for TypeScript, Go, Rust, and C# ([docs](https://docs.arkadeos.com), [demos](https://github.com/arkade-os/demos)).
+
+This matches Stable Ark’s preferred joint-reallocation shape without a custom operator.
+
+### Other stacks (summary)
+
+| Stack | Joint multi-owner offchain update | Notes |
+| --- | --- | --- |
+| **Arkade** | Supported (per implementers + docs model) | Primary PoC target |
+| **Second / Bark** | OOR payments are **one-input** today | Multi-party possible in a round; two-party VTXO policies possible but would need added support; nested MuSig2 (e.g. Stutxo-style) discussed as a way to hide structure from the server |
+| **Wavelength** | Mature durable OOR client FSMs | Evaluate if/when multi-owner packages are first-class; strong reference for session durability patterns |
+
+Details: [implementation landscape](notes/implementation-landscape.md).
+
+Stable Ark-specific logic stays in a separate layer:
 
 - position terms, allocation, oracle verification,
 - bilateral update proposal and signing state machine,
 - collateral and liquidation policy,
-- adapters to an Ark backend interface.
-
-Modify or extend an Ark client/operator only when the PoC shows that bilateral multi-owner OOR cannot be expressed with existing APIs.
+- adapters behind a small `ArkBackend` interface.
 
 ## 14. Proof-of-concept milestone
 
-Minimum viable demonstration on regtest with two participants:
+Minimum viable demonstration (prefer Arkade regtest / mutinynet) with two participants:
 
 1. Open a position (fund paired VTXOs with agreed `target_usd`).
 2. Apply a synthetic oracle tick.
-3. Complete one bilateral OOR reprice preserving value conservation and collateral checks.
+3. Complete one **joint** reallocation (Alice input + Bob input → new allocations) with conservation and collateral checks.
 4. Cooperatively close.
 5. Separately demonstrate unilateral exit from a live position using only local recovery data.
 
@@ -241,28 +276,33 @@ Failure cases to exercise:
 
 - oracle stale or conflicting feeds,
 - counterparty stops signing,
-- operator refuses OOR co-sign,
+- operator refuses co-sign,
 - attempted exit from an old state,
 - collateral breach requiring emergency close.
 
-Success criterion: show that the economic mechanism maps onto real Ark OOR/round primitives without a custom node.
+Success criterion: show the economic mechanism on a **public/normal operator**, without Stable Ark server-side logic.
 
 ## 15. Open questions
 
-1. Can existing OOR flows support **atomic bilateral** signing where neither party gains a usable half-signed advantage?
-2. What minimal operator RPC changes, if any, are required beyond today’s checkpoint co-sign model?
-3. How should sequence and oracle commitments be encoded for wallet UX and auditability?
-4. When should a position be forced into a round refresh (depth, expiry, trust preference)?
-5. Can many stable users share pooled risk providers with netting at round boundaries without weakening unilateral exit?
-6. What collateral ratios survive realistic BTC volatility given OOR and signing latency?
+1. On Arkade: what is the minimal two-wallet signing coordinator for submit/finalize when inputs have different owners?
+2. How should sequence and oracle commitments be encoded for wallet UX and auditability?
+3. When should a position be forced into lifecycle settlement (depth, expiry, trust preference)?
+4. Can many stable users share pooled risk providers with netting at batch boundaries without weakening unilateral exit?
+5. What collateral ratios survive realistic BTC volatility given signing latency?
+6. On Second/Bark: is the preferred long-term path round-based multi-party, two-party VTXO policies, nested MuSig2, or multi-input OOR?
 
 ## 16. Status and next steps
 
-Stable Ark is at the **design note** stage. Next engineering work is a bilateral OOR reprice prototype against an existing Ark client, followed by a written threat-model review.
+Stable Ark is at the **design note** stage with an **Arkade-first** PoC plan:
+
+1. Intro / DevRel with Arkade; exercise multi-owner Arkade transactions from the SDK/demos.
+2. Implement a two-wallet joint reprice with a fake oracle.
+3. Write down the concrete threat model against that PoC.
+4. Keep Second/Bark and Wavelength as compatibility targets behind an adapter if/when primitives allow.
 
 Project home: [https://stableark.org](https://stableark.org)  
 Canonical source: [https://github.com/stableark/stableark](https://github.com/stableark/stableark)
 
 ### Acknowledgements
 
-This design builds on Stable Channels by Tony Klausing, and on the Ark protocol’s OOR and round architecture as documented by Ark contributors and implemented in Second/Bark, Arkade, and Wavelength. Errors and speculative mappings are the author’s alone.
+This design builds on Stable Channels by Tony Klausing, and on Ark-family VTXO systems as implemented by Arkade (Ark Labs), Second/Bark, and Lightning Labs Wavelength. Thanks to implementers who clarified multi-input offchain transaction support and OOR structural constraints. Errors and speculative mappings are the author’s alone.

@@ -1,16 +1,18 @@
 # Stable Ark
 
-Self-custodial, dollar-denominated balances on Bitcoin using [Ark](https://ark-protocol.org/) VTXOs.
+Self-custodial, dollar-denominated balances on Bitcoin using Ark-family VTXOs.
 
-Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, paired with a counterparty who takes leveraged BTC price exposure. Position updates use Ark out-of-round (OOR) transfers; Ark rounds periodically renew expiry and restore stronger refresh-VTXO security.
+Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, paired with a counterparty who takes leveraged BTC price exposure. Position updates are **joint multi-input / multi-output offchain transactions**; lifecycle renewal uses each stack’s batch settlement path.
 
-**Status:** research prototype — design note only; no production software yet.
+**Status:** research prototype — design note stage, **Arkade-first** PoC planned. No production software yet.
 
 ## Links
 
 - Project home: [https://stableark.org](https://stableark.org)
 - Source: [https://github.com/stableark/stableark](https://github.com/stableark/stableark)
 - Design note: [DESIGN.md](DESIGN.md)
+- Implementation landscape: [notes/implementation-landscape.md](notes/implementation-landscape.md)
+- Joint multi-input primitive: [notes/bilateral-atomic-oor.md](notes/bilateral-atomic-oor.md)
 - Domain / Pages setup: [DOMAIN.md](DOMAIN.md)
 
 ## Non-goals
@@ -21,7 +23,7 @@ Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, pai
 
 ## Credits
 
-Builds on the economic design of [Stable Channels](https://stablechannels.com/) (Tony Klausing) and on Ark’s OOR payment model as described by the Ark protocol and implementations such as Second/Bark, Arkade, and Lightning Labs Wavelength.
+Builds on the economic design of [Stable Channels](https://stablechannels.com/) (Tony Klausing) and on Ark-family VTXO systems as implemented by Arkade, Second/Bark, and Lightning Labs Wavelength.
 
 ## License
 
