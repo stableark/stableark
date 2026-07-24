@@ -2,13 +2,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Stable Ark">
   <rect width="128" height="128" fill="#f7f5f0"/>
   <g fill="none" stroke="#0b3d2e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
-    <!-- deck -->
     <path d="M30 46h68"/>
-    <!-- hull -->
     <path d="M30 46c2 34 18 50 34 50s32-16 34-50"/>
-    <!-- waterline / level -->
     <path d="M44 72h40"/>
   </g>
-  <!-- ballast (not a letter) -->
-  <rect x="58" y="56" width="12" height="12" fill="#0b3d2e"/>
 </svg>
