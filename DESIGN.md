@@ -8,6 +8,7 @@ This note describes a protocol idea for self-custodial, dollar-indexed bitcoin b
 
 **Related notes**
 
+- [User onboarding flow](notes/user-onboarding.md) — board → match → open → reprice vs renew → exit
 - [Stack comparison](notes/stack-comparison.md) — Bark vs Arkade vs Wavelength (general)
 - [Implementation landscape](notes/implementation-landscape.md) — how current stacks differ for Stable Ark
 - [Joint multi-input spends](notes/bilateral-atomic-oor.md) — why the joint-update primitive matters
@@ -49,12 +50,14 @@ There is no Stable Ark token. There is only bitcoin, allocated between counterpa
 | **Risk provider** | Posts excess BTC collateral and takes (typically long) BTC price exposure. |
 | **Ark operator** | Co-signs offchain transactions / coordinates batch settlement as required by the deployment—not a custodian of user keys. |
 | **Price oracle** | Publishes BTC/USD observations that clients verify independently. |
-| **Matching coordinator** (optional) | Helps find counterparties or net pool exposure; must not be required for unilateral exit. |
+| **Matching coordinator** (optional) | Helps find counterparties or net pool exposure; must not be required for unilateral exit. Concrete shape: invite/QR for PoC; later **Nostr** offers/bids + soft LP reputation (discovery only—not custody). See [user onboarding](notes/user-onboarding.md). |
 | **Watchtower** (optional) | Monitors for on-chain spends of position ancestors and assists exits. |
 
 Critical invariant: either participant must be able to exit using locally held recovery material, without trusting the matching coordinator or the other party’s liveness forever.
 
 **Important:** Stable Ark does **not** require a custom operator. Two users running Stable Ark clients should connect to a normal public operator for that stack.
+
+**Permissionless risk providers:** any party that can board, meet collateral policy, and keep signing may act as LP. Protocol does not issue LP licenses; wallets may still curate defaults. Economic terms (`target_usd`, fees, collateral above a client floor, oracle allowlist) are **negotiated**; boarding, co-sign, VTXO renewal, and exit packages are **inherited from the Ark stack**—see [user onboarding](notes/user-onboarding.md).
 
 ## 5. Position model
 
@@ -83,6 +86,8 @@ Two kinds of “refresh” must not be conflated.
 | --- | --- | --- |
 | **Financial refresh** | Reallocate sats after a price change | Joint multi-input / multi-output offchain tx |
 | **Lifecycle refresh** | Renew expiry, shorten exit path, restore stronger settlement security | Batch settlement (rounds / batch swaps / intents) |
+
+Product UX and liveness (LP always-on vs intermittent stable user; ~hourly round *opportunity* vs ~monthly VTXO *lifetime*; why live joint reprice rather than DLC-style price-grid presign for v1) are spelled out in [user onboarding](notes/user-onboarding.md).
 
 ```mermaid
 flowchart TD
