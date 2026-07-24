@@ -182,6 +182,25 @@ stable receiver position VTXO + risk provider position VTXO
 
 Primary UI balance becomes **stable USD** (sats underneath), unless leftover free VTXOs remain outside the position.
 
+#### Verifying the other side has enough (liquidity vs Stable Channels)
+
+In Stable Channels, capacity is the channel size; balances move inside it. Here there is no channel: **total funded sats `T` across the two position VTXOs** is the capacity. Marks only reallocate inside `T` (minus fees) unless someone tops up.
+
+**Nostr / invite claims are soft.** An offer’s “capacity band” is an advertisement—forgeable, like LN capacity gossip. Soft trust (npub, NIP-05, WoT) does not prove spendable VTXOs.
+
+**Hard check = the joint open package.** Before either party signs, both clients inspect the proposed Arkade transaction:
+
+| Who checks | What must be true |
+| --- | --- |
+| **Stable user → LP** | LP input(s) ≥ stable principal + `min_collateral(target_usd, P0, policy)` (and fee reserves if required) |
+| **LP → stable user** | User input(s) ≥ ~`target_usd / P0` (stable principal under policy) |
+
+If either side is short → **do not sign**. Operator co-sign only after both have signed. Abort leaves no half-open position—same role as refusing a bad channel open.
+
+**After open:** both track the tip. Each mark re-checks conservation and `risk_sats ≥ min_collateral`. Underwater LP → refuse mark / demand top-up / emergency close or unilateral exit. User cannot “owe” outside the VTXO pair without a new dual-fund resize.
+
+**LP inventory across many users:** Nostr capacity is still soft; each new open repeats the input check. Pros should advertise conservatively and subtract pending opens locally.
+
 ### 7. Live: updates, liveness, expiry
 
 Two clocks (see [DESIGN.md](../DESIGN.md) §6):

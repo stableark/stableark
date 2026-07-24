@@ -87,6 +87,8 @@ At every valid state `n`:
 
 Exact dust, fee, and rounding rules are implementation details for the PoC; the design requires conservation and explicit policy rather than ad hoc balance edits.
 
+**Verifying counterparty liquidity:** Nostr/offer capacity claims are soft. Hard assurance is mutual inspection of **boarding inputs** in the joint open transaction (user principal vs LP principal + overcollateral) before either signs—see [user onboarding §6](notes/user-onboarding.md#6-open-position-dual-fund--paired-vtxos). Ongoing marks re-check `min_collateral` on the tip risk VTXO.
+
 ## 6. Update lifecycle
 
 Two kinds of “refresh” must not be conflated.
