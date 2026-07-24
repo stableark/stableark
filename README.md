@@ -16,6 +16,7 @@ Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, pai
 - Implementation landscape (Stable Ark–focused): [notes/implementation-landscape.md](notes/implementation-landscape.md)
 - Joint multi-input primitive: [notes/bilateral-atomic-oor.md](notes/bilateral-atomic-oor.md)
 - Domain / Pages setup: [DOMAIN.md](DOMAIN.md)
+- Brand assets (favicon, avatar, OG): [assets/](assets/)
 
 ## Non-goals
 

@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stable Ark</title>
   <meta name="description" content="Self-custodial, dollar-indexed bitcoin balances on Ark-family VTXOs. No issued token.">
+  <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/assets/favicon-16.png" type="image/png" sizes="16x16">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" sizes="180x180">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://stableark.org/">
+  <meta property="og:title" content="Stable Ark">
+  <meta property="og:description" content="Self-custodial, dollar-indexed bitcoin balances on Ark-family VTXOs. No issued token.">
+  <meta property="og:image" content="https://stableark.org/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Stable Ark">
+  <meta name="twitter:description" content="Self-custodial, dollar-indexed bitcoin balances on Ark-family VTXOs. No issued token.">
+  <meta name="twitter:image" content="https://stableark.org/assets/og.png">
   <style>
     :root {
       --bg: #f7f5f0;
@@ -30,11 +43,22 @@
       margin: 0 auto;
       padding: 4.5rem 1.5rem 5rem;
     }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin: 0 0 0.75rem;
+    }
+    .brand img {
+      width: clamp(2.6rem, 7vw, 3.4rem);
+      height: clamp(2.6rem, 7vw, 3.4rem);
+      border-radius: 4px;
+    }
     h1 {
       font-size: clamp(2.4rem, 6vw, 3.4rem);
       font-weight: 600;
       letter-spacing: -0.02em;
-      margin: 0 0 0.75rem;
+      margin: 0;
       color: var(--accent);
     }
     .lede {
@@ -82,7 +106,10 @@
 </head>
 <body>
   <main>
-    <h1>Stable Ark</h1>
+    <div class="brand">
+      <img src="/assets/mark.svg" width="64" height="64" alt="">
+      <h1>Stable Ark</h1>
+    </div>
     <p class="lede">Self-custodial, dollar-indexed bitcoin balances on Ark-family VTXOs. No issued token.</p>
     <p class="status">Status: research prototype — design notes published; Arkade-first PoC planned; no production software yet.</p>
     <nav>
