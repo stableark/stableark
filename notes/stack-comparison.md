@@ -7,10 +7,14 @@ This is an independent research note for builders. It is **not** an official sta
 | Project | Org | What it primarily is |
 | --- | --- | --- |
 | **Bark** | [Second](https://second.tech) | Full Ark **implementation**: client SDK + wallet daemon + operator (`captaind`) |
-| **Arkade** | [Ark Labs](https://arklabs.xyz) | Full Arkade **stack**: programmable offchain execution (`arkd`) + multi-language SDKs |
-| **Wavelength** | [Lightning Labs](https://lightning.engineering) | Ark **client** daemon/SDK (`waved`) that connects to an operator; plus Lightning swaps |
+| **Arkade** | [Ark Labs](https://arklabs.xyz) | Full **Arkade** stack (`arkd` + SDKs): Ark-family implementation focused on programmable offchain execution, intents/batch swaps, contracts/assets |
+| **Wavelength** | [Lightning Labs](https://lightning.engineering) | Embedded Ark **client** daemon/SDK (`waved`) that talks to a **Wavelength-compatible Ark gateway**, plus Lightning↔Ark swaps |
 
-They share ancestry in the “VTXO / shared UTXO / operator-coordinated offchain bitcoin” design space, but they are **not drop-in compatible** today (transaction templates, connectors, serialization, and APIs diverge). Treat them as sibling ecosystems, not one wire protocol with three skins.
+They share ancestry in the “VTXO / shared UTXO / operator-coordinated offchain bitcoin” design space, but they currently expose **distinct client/operator APIs and SDKs** and should **not** be treated as wire-compatible. There is no published compatibility layer that lets a client from one ecosystem speak to another’s operator. Transaction templates and serialization also diverge ([Second community RFC](https://community.second.tech/t/rfc-standardizing-virtual-transaction-templates-for-cross-implementation-interoperability/181)).
+
+Treat them as sibling ecosystems, not one shared wire protocol with three skins.
+
+**Precision note:** “Distinct APIs / no published cross-compat” is well evidenced (see [Interoperability](#interoperability)). That is *not* the same as proving every byte of every underlying operator RPC is unrelated—avoid claiming a wholly separate invented protocol unless you have done a full protobuf diff. What matters for builders is: **you cannot assume `waved` ↔ `arkd` or Bark ↔ Arkade works.**
 
 ---
 
@@ -19,8 +23,8 @@ They share ancestry in the “VTXO / shared UTXO / operator-coordinated offchain
 | | Positioning |
 | --- | --- |
 | **Bark / Second** | Make self-custodial bitcoin payments (Ark + Lightning + onchain) easy to embed in apps — “no channels, no liquidity management.” |
-| **Arkade / Ark Labs** | Bitcoin-native **virtual execution layer**: UTXO-style offchain txs, intents/batch swaps, contracts/assets roadmap (“programmable money”). |
-| **Wavelength / Lightning Labs** | Production-minded **client toolkit** for apps/agents: durable Ark client + optional Lightning swap engine behind one daemon and simple wallet verbs. |
+| **Arkade / Ark Labs** | Arkade implementation focused on **programmable offchain execution**: UTXO-style Arkade txs, intents/batch swaps, contracts/assets roadmap (“programmable money”). |
+| **Wavelength / Lightning Labs** | Production-minded **Ark client toolkit** for apps/agents: embedded wallet daemon + optional Lightning swap engine, driven by a high-level SDK/CLI rather than raw operator protos. |
 
 ---
 
@@ -35,21 +39,23 @@ They share ancestry in the “VTXO / shared UTXO / operator-coordinated offchain
      Bark SDK/barkd   Arkade SDKs    Wavelength waved
            │               │               │
            ▼               ▼               ▼
-      Second operator   Arkade operator   External operator
-        (captaind)         (arkd)         (e.g. lumos / host)
+      Second operator   Arkade operator   Wavelength-compatible
+        (captaind)         (arkd)         Ark gateway + swap + Esplora
            │               │               │
            └───────────────┴───────────────┘
                            ▼
                       Bitcoin chain
 ```
 
-| | Client | Operator | Notes |
+| | Client | Operator / backends | Notes |
 | --- | --- | --- | --- |
 | **Bark** | Bark SDK, barkd, apps (Noah, etc.) | Second runs / ships operator side | End-to-end product from one org |
-| **Arkade** | TS / Go / Rust / C# SDKs | `arkd` (+ signer/TEE model in docs) | End-to-end product; strong “execution engine” framing |
-| **Wavelength** | `waved` / `wavecli` / SDKs | **Not** shipped as the client repo’s job | Client talks to an Ark operator over mailbox/gRPC |
+| **Arkade** | TS / Go / Rust / C# SDKs | `arkd` (+ signer/TEE model in docs) | End-to-end Arkade product; `arkd` describes itself as an Arkade server that builds on Ark ideas |
+| **Wavelength** | Embedded `waved` (native/WASM) + SDK/CLI | Configures **three** gateways: Ark operator+mailbox (`arkServerAddress`), swap server, Esplora | Public `defaultConfig('signet'/'testnet')` presets point at Lightning Labs–hosted test infrastructure ([system architecture](https://wavelength.lightning.engineering/introduction/system-architecture/), [networks & config](https://wavelength.lightning.engineering/concepts/networks-and-config/)) |
 
-Wavelength’s [ARCHITECTURE.md](https://github.com/lightninglabs/wavelength/blob/main/ARCHITECTURE.md) is explicit: it is an Ark **protocol client daemon**.
+Wavelength is still an **Ark client** (rounds, VTXOs, OOR, exits). It packages that behind an embedded daemon and a high-level app API. Do **not** read “connects to an operator” as “works with any Arkade/Bark operator”—there is no documented cross-stack gateway compatibility.
+
+See [ARCHITECTURE.md](https://github.com/lightninglabs/wavelength/blob/main/ARCHITECTURE.md) for the Go daemon map.
 
 ---
 
@@ -171,7 +177,7 @@ Different accents:
 | --- | --- |
 | **Bark** | Mainnet-oriented payment product + SDK ecosystem; rounds/OOR language familiar to Ark readers |
 | **Arkade** | Public docs + SDKs + programmable/assets roadmap; terminology and mechanics diverge from “classic Ark” blog posts on purpose |
-| **Wavelength** | Young public alpha client (`v0.1.0`); very complete internal architecture; depends on a compatible operator deployment |
+| **Wavelength** | Young public alpha client (`v0.1.0`); very complete internal architecture; public presets use LL-hosted Ark/swap gateways on signet/testnet; mainnet is gated / bring-your-own endpoints |
 
 Do not assume mainnet readiness, fee schedules, or operator SLAs from this table alone.
 
@@ -179,9 +185,17 @@ Do not assume mainnet readiness, fee schedules, or operator SLAs from this table
 
 ## Interoperability
 
-Today you generally **cannot** move a VTXO from Second’s operator to Arkade’s operator as if they were one network. Community discussion has noted template/serialization divergences across implementations ([Second community RFC thread](https://community.second.tech/t/rfc-standardizing-virtual-transaction-templates-for-cross-implementation-interoperability/181)).
+Although all three implement Ark-family concepts (VTXOs, collaborative offchain spends, batch settlement/renewal, unilateral exit), they expose **different client/operator APIs and SDKs**. Today there is **no published compatibility layer** allowing clients from one ecosystem to communicate directly with another’s operator.
 
-Practical rule: pick a stack and an operator; design your app against that pair; abstract only at your own `Backend` interface if you need portability later.
+Concrete API divergence (illustrative, not exhaustive):
+
+- Arkade publishes `api-spec` under protobuf package `ark.v1` (e.g. `RegisterIntent`, batch RPCs) with automated breaking-change policy ([arkd api-spec](https://github.com/arkade-os/arkd/tree/master/api-spec)).
+- Wavelength’s in-tree operator stubs live under `package arkrpc` in [`arkrpc/`](https://github.com/lightninglabs/wavelength/tree/main/arkrpc) (different package path and method surface; e.g. version negotiation via `supported_ark_versions` on `GetInfo`).
+- Bark/Second maintain their own client/operator stack (Rust SDK, barkd, captaind) rather than documenting Arkade `ark.v1` or Wavelength `arkrpc` as the wire format.
+
+You also generally **cannot** move a VTXO from Second’s operator to Arkade’s operator as if they were one network. Community discussion has noted template/serialization divergences ([Second community RFC](https://community.second.tech/t/rfc-standardizing-virtual-transaction-templates-for-cross-implementation-interoperability/181)).
+
+Practical rule: pick a **stack + matching gateway/operator**; design your app against that pair. Do not assume `waved → arkd` or Bark client → Arkade operator. Abstract only at your own `Backend` interface if you need portability later.
 
 ---
 
@@ -191,7 +205,7 @@ Practical rule: pick a stack and an operator; design your app against that pair;
 | --- | --- |
 | Embed Ark + Lightning payments in a mobile/web app fast | **Bark** |
 | Multi-input offchain contracts, escrow, dual-party state, assets/programmability | **Arkade** |
-| A Go daemon with durable sessions, swaps, MCP/agent tooling, talking to an LL-style operator | **Wavelength** |
+| An embedded Go/WASM Ark client with durable sessions, swaps, MCP/agent tooling, against a Wavelength-compatible gateway | **Wavelength** |
 | Study client crash-safety / exit / OOR FSMs regardless of runtime | Read **Wavelength** ARCHITECTURE even if you ship on Arkade/Bark |
 | One mental model from 2023–2024 Ark explainers | **Bark/Wavelength** vocabulary will feel closer; still verify current Second docs |
 | “It’s just bitcoin txs, unbroadcast + cosigned” | **Arkade** vocabulary will feel closer |
@@ -207,9 +221,9 @@ Short version:
 - Preferred primitive = joint multi-owner reallocation in one collaborative offchain tx.
 - **Arkade** currently matches that primitive most directly.
 - **Bark** can approximate with directional OOR + round consolidation, or grow multi-party support.
-- **Wavelength** is an excellent client reference and a possible later adapter, not the first place to expect bilateral atomic product APIs.
+- **Wavelength** is an excellent Ark **client** reference (and a possible later path if a Wavelength-compatible gateway exposes the needed tx shape), not the first place to expect bilateral atomic product APIs.
 
-Stable Ark still should **not** require a custom operator: two clients on a normal public operator for the chosen stack.
+Stable Ark still should **not** require a custom app-specific operator: two clients on a **normal public gateway for the chosen stack** (Arkade operator, Second operator, or Wavelength-compatible Ark gateway—not cross-wired).
 
 ---
 
@@ -217,7 +231,7 @@ Stable Ark still should **not** require a custom operator: two clients on a norm
 
 - Bark / Second: [second.tech](https://second.tech), [intro](https://second.tech/docs/learn/intro), [VTXOs](https://second.tech/docs/learn/vtxo), [rounds](https://second.tech/docs/learn/rounds)
 - Arkade: [docs.arkadeos.com](https://docs.arkadeos.com), [glossary](https://docs.arkadeos.com/glossary), [contracts deep dive](https://docs.arkadeos.com/contracts/deep-dive), [demos](https://github.com/arkade-os/demos)
-- Wavelength: [github.com/lightninglabs/wavelength](https://github.com/lightninglabs/wavelength), [ARCHITECTURE.md](https://github.com/lightninglabs/wavelength/blob/main/ARCHITECTURE.md), [wavelength.lightning.engineering](https://wavelength.lightning.engineering/)
+- Wavelength: [github.com/lightninglabs/wavelength](https://github.com/lightninglabs/wavelength), [ARCHITECTURE.md](https://github.com/lightninglabs/wavelength/blob/main/ARCHITECTURE.md), [system architecture](https://wavelength.lightning.engineering/introduction/system-architecture/), [networks & config](https://wavelength.lightning.engineering/concepts/networks-and-config/)
 - Classic OOR explainer (not Arkade-authoritative): [ark-protocol.org OOR](https://ark-protocol.org/intro/oor/index.html)
 
 ---
@@ -225,3 +239,4 @@ Stable Ark still should **not** require a custom operator: two clients on a norm
 ## Changelog
 
 - **2026-07-24:** Initial public comparison from docs + implementer clarifications (Arkade multi-owner txs; Bark one-input OOR).
+- **2026-07-24 (later):** Strengthen API/non-interop wording; clarify Wavelength as embedded Ark client + Wavelength-compatible gateway (LL-hosted presets on signet/testnet); soften “execution layer” rollup implication; avoid over-claiming a wholly separate Wavelength protocol.

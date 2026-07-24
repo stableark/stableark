@@ -18,7 +18,7 @@ For a broader product/architecture comparison (not only Stable Ark), see [stack-
 | --- | --- | --- | --- |
 | **Arkade** (Ark Labs) | Arkade transactions (UTXO-style) | **Yes** — distinct keys can sign distinct inputs; operator co-signs; not mined | Intents + batch swaps (not “send in round”) |
 | **Second / Bark** | OOR / arkoor | **No today** — OOR is one-input structurally; multi-party more natural in a round; two-party VTXO policies possible but need added support | Periodic rounds for refresh |
-| **Wavelength** (Lightning Labs) | Durable OOR client FSMs | Treat as unknown / evaluate — strong packaging and recovery patterns | Rounds + OOR |
+| **Wavelength** (Lightning Labs) | Durable OOR client FSMs against a **Wavelength-compatible** Ark gateway | Not a documented multi-owner product path; strong packaging/recovery | Rounds + OOR; public presets use LL-hosted gateways on signet/testnet |
 
 **Stable Ark primary PoC target: Arkade.**
 
@@ -80,20 +80,21 @@ Implementer confirmation (July 2026):
 
 ---
 
-## Wavelength (Lightning Labs)
+### Wavelength (Lightning Labs)
 
-Sources: [wavelength](https://github.com/lightninglabs/wavelength) architecture (`oor`, `lib/tx/oor`, checkpoints, fraud, unroll).
+Sources: [wavelength](https://github.com/lightninglabs/wavelength) architecture (`oor`, `lib/tx/oor`, checkpoints, fraud, unroll); [system architecture](https://wavelength.lightning.engineering/introduction/system-architecture/).
 
 ### Model
 
-- Client daemon with durable OOR session FSMs, checkpoint packages, round participation, fraud monitoring, unilateral unroll.
+- Embedded/self-custodial Ark **client** daemon with durable OOR session FSMs, checkpoint packages, round participation, fraud monitoring, unilateral unroll.
+- Connects to three backends: Ark operator+mailbox (`arkServerAddress`), swap server, Esplora. Public signet/testnet presets use Lightning Labs–hosted gateways. There is **no documented** compatibility with Arkade `arkd` or Bark’s operator.
 - Explicit separation of OOR vs rounds at the client layer.
 - `BuildArkPSBT` accepts multiple checkpoint inputs and multiple recipients at the **transaction builder** level; whether production flows expose multi-**owner** signing as a first-class product path still needs evaluation.
 
 ### Implications for Stable Ark
 
 - Excellent reference for durable session design even if Arkade is the first runtime.
-- Revisit if Wavelength/operator APIs make multi-owner packages easy.
+- Revisit only against a Wavelength-compatible gateway—not by pointing `waved` at `arkd`.
 
 ---
 

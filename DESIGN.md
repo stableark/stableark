@@ -252,7 +252,7 @@ This matches Stable Ark’s preferred joint-reallocation shape without a custom 
 | --- | --- | --- |
 | **Arkade** | Supported (per implementers + docs model) | Primary PoC target |
 | **Second / Bark** | OOR payments are **one-input** today | Multi-party possible in a round; two-party VTXO policies possible but would need added support; nested MuSig2 (e.g. Stutxo-style) discussed as a way to hide structure from the server |
-| **Wavelength** | Mature durable OOR client FSMs | Evaluate if/when multi-owner packages are first-class; strong reference for session durability patterns |
+| **Wavelength** | Mature durable OOR client FSMs | Evaluate against a Wavelength-compatible gateway only; strong reference for session durability patterns |
 
 Details: [implementation landscape](notes/implementation-landscape.md).
 
