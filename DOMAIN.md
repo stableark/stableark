@@ -43,7 +43,32 @@ Optional IPv6 (AAAA) for `@`:
 
 Do **not** use Namecheap “URL Redirect” at the same time as these A records.
 
-## 5. Verify
+## 5. Brand assets (site + GitHub)
+
+Files live in [`assets/`](assets/). Site favicon / OG tags are already wired in `index.html`.
+
+| Asset | Purpose |
+| --- | --- |
+| `mark.png` | Favicon + header mark |
+| `og.png` | Website Open Graph / Twitter cards |
+| `logo.png` | README / wordmark |
+| `avatar.png` | GitHub org avatar |
+| `github-social.jpg` | Repo **Social preview** (under 1 MB; GitHub’s limit) |
+
+### Already done via API / push
+
+- Pages deployed from `main` with `CNAME` → `stableark.org`
+- Repo **Website** homepage set to `https://stableark.org`
+- Repo description set
+
+### Manual (GitHub has no public API for these)
+
+1. **Org avatar:** [Organization profile settings](https://github.com/organizations/stableark/settings/profile) → upload [`assets/avatar.png`](assets/avatar.png)
+2. **Repo social preview:** [Repository settings](https://github.com/stableark/stableark/settings) → **Social preview** → Edit → upload [`assets/github-social.jpg`](assets/github-social.jpg)
+
+After upload, repo links on Slack/X/etc. should unfurl the ark banner; the org should show the cream-on-green ship avatar.
+
+## 6. Verify
 
 After DNS propagates (often minutes, sometimes up to 24–48h):
 
@@ -52,6 +77,9 @@ dig stableark.org +short
 # expect the four 185.199.* addresses
 
 curl -I https://stableark.org
+curl -I https://stableark.org/assets/og.png
+curl -I https://stableark.org/assets/mark.png
 ```
 
 Official reference: [Managing a custom domain for GitHub Pages](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
+

@@ -9,6 +9,7 @@ This note describes a protocol idea for self-custodial, dollar-indexed bitcoin b
 **Related notes**
 
 - [User onboarding flow](notes/user-onboarding.md) — board → match → open → reprice vs renew → exit
+- [Brand assets](assets/) — favicon, logo, OG / GitHub social images
 - [Stack comparison](notes/stack-comparison.md) — Bark vs Arkade vs Wavelength (general)
 - [Implementation landscape](notes/implementation-landscape.md) — how current stacks differ for Stable Ark
 - [Joint multi-input spends](notes/bilateral-atomic-oor.md) — why the joint-update primitive matters

@@ -1,5 +1,9 @@
 # Stable Ark
 
+<p align="center">
+  <img src="assets/logo.png" alt="Stable Ark" width="420">
+</p>
+
 Self-custodial, dollar-denominated balances on Bitcoin using Ark-family VTXOs.
 
 Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, paired with a counterparty who takes leveraged BTC price exposure. Position updates are **joint multi-input / multi-output offchain transactions**; lifecycle renewal uses each stack’s batch settlement path.
