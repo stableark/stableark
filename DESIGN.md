@@ -51,14 +51,22 @@ There is no Stable Ark token. There is only bitcoin, allocated between counterpa
 | **Risk provider** | Posts excess BTC collateral and takes (typically long) BTC price exposure. |
 | **Ark operator** | Co-signs offchain transactions / coordinates batch settlement as required by the deployment—not a custodian of user keys. |
 | **Price oracle** | Publishes BTC/USD observations that clients verify independently. |
-| **Matching coordinator** (optional) | Helps find counterparties or net pool exposure; must not be required for unilateral exit. Concrete shape: invite/QR for PoC; later **Nostr** offers/bids + soft LP reputation (discovery only—not custody). See [user onboarding](notes/user-onboarding.md). |
+| **Matching coordinator** (optional) | Helps find counterparties or net pool exposure; must not be required for unilateral exit. **PoC shape:** **Nostr** offer publish/fetch and/or `nprofile` invite (replaceable relays; discovery only—not custody). Soft reputation (WoT, receipts) is post-PoC. A local two-wallet / QR path remains a **dev fallback**. See [user onboarding](notes/user-onboarding.md). |
 | **Watchtower** (optional) | Monitors for on-chain spends of position ancestors and assists exits. |
 
 Critical invariant: either participant must be able to exit using locally held recovery material, without trusting the matching coordinator or the other party’s liveness forever.
 
 **Important:** Stable Ark does **not** require a custom operator. Two users running Stable Ark clients should connect to a normal public operator for that stack.
 
-**Permissionless risk providers:** any party that can board, meet collateral policy, and keep signing may act as LP. Protocol does not issue LP licenses; wallets may still curate defaults. Economic terms (`target_usd`, fees, collateral above a client floor, oracle allowlist) are **negotiated**; boarding, co-sign, VTXO renewal, and exit packages are **inherited from the Ark stack**—see [user onboarding](notes/user-onboarding.md).
+### Permissionless roles and Nostr discovery
+
+Stable Ark does **not** run a centralized liquidity desk that users must join. At the protocol layer, roles are symmetric: any peer who can board BTC, meet collateral policy, and keep signing may seek stability **or** provide risk. Specialized always-on LPs will likely win retail share on uptime and UX—that is market structure, not a Stable Ark–issued seat.
+
+Counterparties find each other over **Nostr** (replaceable relays) or out-of-band invites, then settle with joint VTXO updates on a normal public Ark operator. There is no mandatory Stable Ark matching server. An HTTPS matcher, if added later, stays optional and non-custodial (same trust box as relays: privacy / matching failure, not fund theft).
+
+**Censorship resistance (scoped):** blocking one relay or one curated allowlist does not stop pairing—users can switch relays or use invites. This claim does **not** remove Ark operator co-sign or liveness assumptions; operator downtime still freezes collaborative updates. Nostr is for **who finds whom**, not for marks, tip state, or exit packages. Collateral, oracle policy, and unilateral exit remain the security model.
+
+Economic terms (`target_usd`, fees, collateral above a client floor, oracle allowlist) are **negotiated**; boarding, co-sign, VTXO renewal, and exit packages are **inherited from the Ark stack**—see [user onboarding](notes/user-onboarding.md). Client-side curated LP lists are optional convenience, not a protocol permission bit.
 
 ## 5. Position model
 
@@ -273,11 +281,26 @@ Stable Ark-specific logic stays in a separate layer:
 
 Minimum viable demonstration (prefer Arkade regtest / mutinynet) with two participants:
 
-1. Open a position (fund paired VTXOs with agreed `target_usd`).
-2. Apply a synthetic oracle tick.
-3. Complete one **joint** reallocation (Alice input + Bob input → new allocations) with conservation and collateral checks.
-4. Cooperatively close.
-5. Separately demonstrate unilateral exit from a live position using only local recovery data.
+```mermaid
+flowchart LR
+  nostr[NostrOfferOrInvite]
+  terms[AgreeTerms]
+  open[JointOpenArkade]
+  mark[JointReprice]
+  close[CloseOrExit]
+
+  nostr --> terms --> open --> mark --> close
+```
+
+1. Publish or fetch a Stable Ark **Nostr** offer (or `nprofile` invite carrying the same terms) on public relays.
+2. Agree negotiated terms locally.
+3. Open a position (fund paired VTXOs with agreed `target_usd`).
+4. Apply a synthetic oracle tick.
+5. Complete one **joint** reallocation (Alice input + Bob input → new allocations) with conservation and collateral checks.
+6. Cooperatively close.
+7. Separately demonstrate unilateral exit from a live position using only local recovery data.
+
+A local two-wallet match without Nostr remains acceptable as a **dev fallback** while wiring Arkade; the PoC headline path includes Nostr discovery.
 
 Failure cases to exercise:
 
@@ -285,9 +308,10 @@ Failure cases to exercise:
 - counterparty stops signing,
 - operator refuses co-sign,
 - attempted exit from an old state,
-- collateral breach requiring emergency close.
+- collateral breach requiring emergency close,
+- relay unreachable / offer not found (switch relay or fall back to invite).
 
-Success criterion: show the economic mechanism on a **public/normal operator**, without Stable Ark server-side logic.
+Success criterion: show the economic mechanism on a **public/normal operator**, with **Nostr** used for discovery, without Stable Ark server-side custody or matching monopoly.
 
 ## 15. Open questions
 
@@ -300,12 +324,13 @@ Success criterion: show the economic mechanism on a **public/normal operator**, 
 
 ## 16. Status and next steps
 
-Stable Ark is at the **design note** stage with an **Arkade-first** PoC plan:
+Stable Ark is at the **design note** stage with an **Arkade-first** PoC plan that includes **Nostr discovery**:
 
 1. Intro / DevRel with Arkade; exercise multi-owner Arkade transactions from the SDK/demos.
-2. Implement a two-wallet joint reprice with a fake oracle.
-3. Write down the concrete threat model against that PoC.
-4. Keep Second/Bark and Wavelength as compatibility targets behind an adapter if/when primitives allow.
+2. Wire Nostr offer publish/fetch (or `nprofile` invite) as the matching path.
+3. Implement a two-wallet joint reprice with a fake oracle.
+4. Write down the concrete threat model against that PoC.
+5. Keep Second/Bark and Wavelength as compatibility targets behind an adapter if/when primitives allow.
 
 Project home: [https://stableark.org](https://stableark.org)  
 Canonical source: [https://github.com/stableark/stableark](https://github.com/stableark/stableark)

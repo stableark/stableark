@@ -114,7 +114,7 @@
       <h1>Stable Ark</h1>
     </div>
     <p class="lede">Self-custodial, dollar-indexed bitcoin balances on Ark-family VTXOs. No issued token.</p>
-    <p class="status">Status: research prototype — design notes published; Arkade-first PoC planned; no production software yet.</p>
+    <p class="status">Status: research prototype — design notes published; Arkade-first PoC with Nostr discovery planned; no production software yet.</p>
     <nav>
       <a class="primary" href="https://github.com/stableark/stableark/blob/main/DESIGN.md">Read the design note</a>
       <a href="https://github.com/stableark/stableark/blob/main/notes/user-onboarding.md">User onboarding</a>
@@ -123,6 +123,11 @@
     <p>
       Stable Ark pairs a USD-indexed claim with a leveraged bitcoin counterparty on a normal public Ark operator.
       Price updates are joint multi-input offchain reallocations; lifecycle renewal uses each stack’s batch or intent path—not the price clock.
+    </p>
+    <p>
+      Anyone can seek stability or provide risk—there is no Stable Ark–run liquidity desk you must join.
+      Counterparties meet over Nostr (replaceable relays), then settle with your keys on that public operator.
+      Discovery can be censored only as hard as the relays you choose; the Ark operator’s co-sign path remains a separate trust assumption.
     </p>
     <footer>
       <p>Project home: stableark.org · Canonical source: github.com/stableark/stableark</p>

@@ -8,7 +8,9 @@ Self-custodial, dollar-denominated balances on Bitcoin using Ark-family VTXOs.
 
 Stable Ark lets a user hold a USD-indexed claim settled entirely in bitcoin, paired with a counterparty who takes leveraged BTC price exposure. Position updates are **joint multi-input / multi-output offchain transactions**; lifecycle renewal uses each stack’s batch settlement path.
 
-**Status:** research prototype — design note stage, **Arkade-first** PoC planned. No production software yet.
+Anyone can seek stability or provide risk—there is no Stable Ark–run liquidity desk you must join. Counterparties meet over **Nostr** (replaceable relays), then settle on a normal public Ark operator. Discovery can be censored only as hard as the relays you choose; custody and exit stay with your keys.
+
+**Status:** research prototype — design note stage, **Arkade-first PoC with Nostr discovery** planned. No production software yet.
 
 ## Links
 

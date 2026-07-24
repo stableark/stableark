@@ -13,9 +13,10 @@ This note describes the end-to-end journey for a **stable receiver** (you have b
 ## Guiding principles
 
 1. **Negotiate what is economic; inherit what is Bitcoin/Ark.** Fees, collateral above a floor, oracle policy, and mark cadence are bilaterally agreed. Boarding, operator co-sign, VTXO expiry/renewal, and unilateral exit use the **stack as designed**—no custom Stable Ark operator, no reinvented settlement clock.
-2. **PoC stays thin.** Prove open → joint reprice → close/exit on Arkade. Skip marketplace, real oracles, watchtowers, pooled LP, spend-while-stable, and price-grid presign unless needed to demo safety.
-3. **Nostr when it fits.** Discovery, soft LP trust, invite / `nprofile`, optional session bootstrap—not marks, not custody, not the tip ledger.
-4. **Safety, good UX, easy for the user.** Auto lifecycle renew; LP expected always-on; retail defaults to curated LPs; advanced path = any peer; one clear terms summary before sign; force-exit disclosed as “you get sats, peg stops.”
+2. **PoC stays thin but includes Nostr discovery.** Prove Nostr offer/`nprofile` match → open → joint reprice → close/exit on Arkade. Skip WoT/receipts, real oracles, watchtowers, pooled LP, spend-while-stable, and price-grid presign unless needed to demo safety.
+3. **Nostr for who finds whom.** Discovery, invites, optional session bootstrap—not marks, not custody, not the tip ledger. Soft reputation is post-PoC.
+4. **Safety, good UX, easy for the user.** Auto lifecycle renew; LP expected always-on when providing risk; optional client allowlists are convenience only; one clear terms summary before sign; force-exit disclosed as “you get sats, peg stops.”
+5. **No Stable Ark liquidity desk.** Any peer may seek stability or provide risk; specialized LPs may win on uptime without a protocol monopoly.
 
 ### Negotiated vs fixed
 
@@ -33,7 +34,11 @@ This note describes the end-to-end journey for a **stable receiver** (you have b
 
 There is no Stable Ark token. The user holds a **VTXO whose sat amount tracks a USD target**, paired with a **risk provider** who posts overcollateralization and takes BTC price risk. Settlement is always bitcoin. The Ark operator only co-signs; it does not custody Stable Ark economics.
 
-**Permissionless risk providers:** anyone who can board BTC, meet collateral policy, and keep signing can be an LP. There is no protocol-level license. Specialized LP services will likely dominate retail UX—that is market structure, not a protocol monopoly. Wallets may **curate defaults** (allowlists, WoT); curation is a client choice, not a settlement permission bit.
+**Permissionless roles:** anyone who can board BTC, meet collateral policy, and keep signing can seek stability **or** provide risk. There is no Stable Ark–run liquidity desk and no protocol-level LP license. Specialized always-on services may dominate retail UX—that is market structure, not a gate. Client allowlists / WoT are optional convenience, not a settlement permission bit.
+
+### Differentiator (important, not the only story)
+
+Anyone can seek stability or provide risk—there is no Stable Ark–run liquidity desk you must join. Counterparties meet over **Nostr** (replaceable relays), then settle with joint VTXO updates on a normal public Ark operator. Discovery can be censored only as hard as the relays you choose; custody and exit stay with your keys. This does **not** remove Ark operator co-sign assumptions. Collateral, oracle policy, and unilateral exit remain the security model; Nostr only finds and ranks peers.
 
 ### Trust stack
 
@@ -105,29 +110,30 @@ flowchart LR
 
 ### 4. Find a counterparty (matching)
 
-**PoC / v1 (default):** invite link, QR, or two local wallets sharing `position_id` + terms hash. No marketplace required.
+**PoC headline path — Nostr discovery**
 
-**Later — preferred discovery: Nostr** (optional matching layer; compromise = bad match / privacy leak, not fund theft):
+- Risk provider (or stable seeker) publishes an **offer** on public relays: collateral band, fee, policy hash, Arkade operator URL(s), contact npub.
+- Counterparty **fetches** offers by filter, or receives an **`nprofile` / encrypted DM invite** carrying the same terms.
+- Both verify terms locally; then open a dedicated session for open + marks (Nostr may bootstrap the session; it should not be the sole hot path for every reprice).
+- Multi-relay; relays are untrusted mirrors of intent. Compromise = bad match / privacy leak, not fund theft.
 
 | Use Nostr for | Do not use Nostr for |
 | --- | --- |
-| LP offers / stable bids, intro handshake | Holding keys or VTXOs |
-| Soft reputation (npub, NIP-05, WoT) | Binding economic validity |
+| LP/stable offers, intro handshake, `nprofile` invites | Holding keys or VTXOs |
+| Soft reputation later (npub, NIP-05, WoT) | Binding economic validity |
 | Session bootstrap to exchange endpoints | Joint reprice / operator co-sign |
-| Optional `nprofile` / `naddr` invites | Unilateral exit packages |
+| Optional watchtower discovery later | Unilateral exit packages |
 
-Sketch: LPs publish offers (collateral band, fee, policy hash, operator URL, npub); users reply privately or via bid; both verify terms locally; then a **dedicated session** for open + marks (Nostr can signal; should not be the sole hot path for every reprice). Multi-relay; relays untrusted.
+**Dev fallback:** invite link, QR, or two local wallets sharing `position_id` + terms hash—useful while wiring Arkade, not the PoC product story.
 
-Caveats: spam/fake liquidity; public bids leak size (prefer DM-to-offer); PoC stays invite-first.
+Caveats: spam/fake liquidity; public bids leak size (prefer DM-to-offer); HTTPS curated matching remains valid with the same non-custodial trust box if a client wants it.
 
-HTTPS curated matching remains valid with the same non-custodial trust box.
-
-#### Other Nostr uses (soft only)
+#### Other Nostr uses (soft only; mostly post-PoC)
 
 | Signal | Role |
 | --- | --- |
 | Persistent npub, NIP-05 | Continuity / brand |
-| WoT / curated allowlist | Retail defaults |
+| WoT / curated allowlist | Optional client convenience |
 | Performance cards / opt-in close receipts | Soft history (gameable alone) |
 | Presence, capacity bands, operator compatibility | Discovery |
 | Watchtower discovery (later) | Same non-custodial box |
@@ -136,8 +142,8 @@ HTTPS curated matching remains valid with the same non-custodial trust box.
 
 | Phase | Nostr |
 | --- | --- |
-| PoC | Optional `nprofile` invite |
-| Early product | Offers + NIP-05 / curated LP list |
+| PoC | Offer publish/fetch + `nprofile` / DM invite |
+| Early product | Same + NIP-05; optional client allowlists |
 | Later | WoT + receipts + watchtower discovery |
 
 ### 5. Negotiate and lock terms
@@ -248,7 +254,7 @@ Board BTC → accept invite or advertise → post collateral-heavy VTXO → auto
 
 PoC LP = second wallet with a large collateral slider (proves anyone-can-be-LP).
 
-**Why permissionless even if pros win:** bilateral trade, not an issued seat; no Stable Ark gatekeeper; friends/OTC can provide stability; pros compete on uptime/fees/Nostr reputation without protocol privilege. Retail UX may still default to curated LPs with an advanced “any npub / invite” path.
+**Why permissionless even if pros win:** bilateral trade, not an issued seat; no Stable Ark gatekeeper or mandatory liquidity desk; friends/OTC can provide stability; pros compete on uptime/fees/Nostr presence without protocol privilege. Clients may offer optional allowlists for convenience—never as the only way to open.
 
 ---
 
@@ -266,7 +272,7 @@ PoC LP = second wallet with a large collateral slider (proves anyone-can-be-LP).
 | Step | PoC | Product |
 | --- | --- | --- |
 | Deposit | Manual Arkade board | In-app board with progress |
-| Matching | Invite / two local wallets | Nostr offers + curated defaults |
+| Matching | Nostr offer / `nprofile` invite (local two-wallet = dev fallback) | Same + optional client allowlists / WoT |
 | Oracle | Fake / scripted | Allowlisted multi-feed + staleness UI |
 | Updates | Button “apply tick” | LP agent + user push / limited auto-agent |
 | Exit | Scripted unilateral path | Guided wizard + backup reminders |
