@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stable Ark</title>
-  <meta name="description" content="Self-custodial, dollar-denominated balances on Bitcoin using Ark VTXOs.">
+  <meta name="description" content="Self-custodial, dollar-indexed bitcoin balances on Ark-family VTXOs. No issued token.">
   <style>
     :root {
       --bg: #f7f5f0;
@@ -83,15 +83,16 @@
 <body>
   <main>
     <h1>Stable Ark</h1>
-    <p class="lede">Self-custodial, dollar-denominated balances on Bitcoin using Ark VTXOs.</p>
-    <p class="status">Status: research prototype — design note published; no production software yet.</p>
+    <p class="lede">Self-custodial, dollar-indexed bitcoin balances on Ark-family VTXOs. No issued token.</p>
+    <p class="status">Status: research prototype — design notes published; Arkade-first PoC planned; no production software yet.</p>
     <nav>
       <a class="primary" href="https://github.com/stableark/stableark/blob/main/DESIGN.md">Read the design note</a>
+      <a href="https://github.com/stableark/stableark/blob/main/notes/user-onboarding.md">User onboarding</a>
       <a href="https://github.com/stableark/stableark">Source on GitHub</a>
     </nav>
     <p>
-      Stable Ark pairs a USD-indexed claim with a leveraged bitcoin counterparty.
-      Position updates use Ark out-of-round transfers; rounds renew expiry and restore stronger refresh-VTXO security.
+      Stable Ark pairs a USD-indexed claim with a leveraged bitcoin counterparty on a normal public Ark operator.
+      Price updates are joint multi-input offchain reallocations; lifecycle renewal uses each stack’s batch or intent path—not the price clock.
     </p>
     <footer>
       <p>Project home: stableark.org · Canonical source: github.com/stableark/stableark</p>
