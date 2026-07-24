@@ -4,7 +4,15 @@
 **Topic:** Atomic multi-owner offchain spends as a general protocol primitive  
 **Also called:** “bilateral atomic OOR” in Second/Wavelength-era language
 
-> **Status (July 2026):** This capability is **not uniformly missing**. See [implementation landscape](implementation-landscape.md). Arkade reports Bitcoin-style multi-input / multi-output Arkade transactions with distinct per-input signers. Second/Bark reports one-input OOR today, with multi-party options more natural in rounds or via future two-party VTXO policies. This note still explains *why* the primitive matters for any stack that lacks it.
+> **Status (July 2026):** This capability is **not uniformly missing**. See [implementation landscape](implementation-landscape.md) and [stack comparison](stack-comparison.md).
+>
+> | Stack | Joint multi-owner collaborative tx today |
+> | --- | --- |
+> | **Arkade** | Yes (UTXO-style Arkade txs; distinct keys per input) |
+> | **Second / Bark** | No in OOR (one-input); multi-party more natural in a round / future two-party policies |
+> | **Wavelength** | Ark **client** with payment-shaped OOR against a **Wavelength-compatible** gateway; not a documented multi-owner product path |
+>
+> The stacks also expose **distinct operator/client APIs** — do not assume a client from one ecosystem can drive another’s gateway. This note still explains *why* the primitive matters for any stack that lacks it (or only approximates it).
 
 ---
 
@@ -30,7 +38,7 @@ Two active input owners, one offchain package, both old outputs consumed, both p
 
 This is not “sats must flow both ways at once.” It is **two inputs, two outputs, one joint agreement**.
 
-On stacks that already expose Bitcoin-like offchain transactions, this is simply a normal multi-input tx that is operator-co-signed and not mined. On stacks whose payment path is one-input OOR, it is an extension (or a round-time / policy workaround).
+On stacks that already expose Bitcoin-like offchain transactions (e.g. Arkade), this is simply a normal multi-input tx that is operator-co-signed and not mined. On stacks whose fast path is one-input OOR (e.g. Bark today; Wavelength’s advertised send path), it is an extension (or a round-time / policy workaround).
 
 ---
 
@@ -38,7 +46,7 @@ On stacks that already expose Bitcoin-like offchain transactions, this is simply
 
 Ark-family systems typically provide:
 
-- **Fast collaborative transfers** between users on the same operator
+- **Fast collaborative transfers** between users on the same operator/gateway
 - **Batch lifecycle settlement** to renew expiry / compress trees / strengthen finality
 
 What applications still need—when the stack does not already provide it—is a fast way for **two (or more) existing VTXO owners to rewrite a shared allocation** without waiting for batch settlement and without reducing the update to a one-way payment.
@@ -84,8 +92,8 @@ Expiry, compression, renewal    →  batch settlement
 
 Framed for any client/operator stack — not for one product or one application:
 
-1. **More expressive apps on unmodified operators**  
-   Wallets and protocols can build contracts that feel like off-chain UTXO renegotiation, not only chat-style payments.
+1. **More expressive apps on normal public gateways for that stack**  
+   Wallets and protocols can build contracts that feel like off-chain UTXO renegotiation, not only chat-style payments—without shipping an app-specific operator.
 
 2. **Higher useful transfer volume**  
    Shared positions generate many small updates over their lifetime. That is recurring collaborative-tx demand for operators, not only one-shot payments.
@@ -99,8 +107,8 @@ Framed for any client/operator stack — not for one product or one application:
 5. **Stronger protocol positioning**  
    “Programmable offchain bitcoin” is more convincing if two users can renegotiate ownership of existing VTXOs atomically.
 
-6. **No need for app-specific operators**  
-   The operator does not need to understand oracles, prices, or contract semantics. It only needs to co-sign a multi-owner package. Apps can stay on public servers.
+6. **Economics stay in clients**  
+   The operator does not need to understand oracles, prices, or contract semantics. It only needs to co-sign a multi-owner package.
 
 7. **Fits existing collaborative security models**  
    Operator co-sign and statechain-like assumptions already exist for collaborative spends. Multi-owner inputs are richer ownership, not a new trust island.
@@ -112,6 +120,7 @@ Framed for any client/operator stack — not for one product or one application:
 - Not replacing batch settlement / renewal
 - Not putting business logic (prices, collateral rules, contract types) into the operator
 - Not requiring a custom coordinator per application
+- Not claiming one ecosystem’s client can drive another’s gateway (APIs diverge; see [stack comparison](stack-comparison.md))
 - Not blocking apps that start with directional payments + later consolidation
 
 One-way payments remain the right default for payments. Joint multi-input updates are the right primitive for **shared-state updates**.
@@ -120,13 +129,13 @@ One-way payments remain the right default for payments. Joint multi-input update
 
 ## Concrete implementation questions
 
-Useful against any current stack:
+Ask these per stack (answers already differ):
 
 1. Can the offchain transaction builder accept **multiple inputs controlled by different owner keys**?
 2. Does operator-side session / co-sign flow assume a single sender, or can it orchestrate multi-owner signing?
 3. If not: what is the minimal RPC and state-machine change for an `N-input / M-output` package where two clients both sign?
 
-Even a narrowly scoped 2-in / 2-out path unlocks a large class of applications.
+Even a narrowly scoped 2-in / 2-out path unlocks a large class of applications on stacks that lack it today.
 
 ---
 
@@ -137,4 +146,4 @@ Joint multi-input offchain updates complete that design: **fast joint reallocati
 
 That makes the stack more useful as a settlement fabric for contracts, not only as a payment rail — while keeping economics in clients and co-signing in the operator, where it already belongs.
 
-For who already supports this and who does not, see [implementation landscape](implementation-landscape.md).
+Who already supports this, who approximates it, and how the APIs diverge: [implementation landscape](implementation-landscape.md), [stack comparison](stack-comparison.md).
