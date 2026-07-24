@@ -49,9 +49,10 @@ Files live in [`assets/`](assets/). Site favicon / OG tags are already wired in 
 
 | Asset | Purpose |
 | --- | --- |
-| `mark.png` | Favicon + header mark |
-| `og.png` | Website Open Graph / Twitter cards |
-| `logo.png` | README / wordmark |
+| `mark.png` | Favicon source (cream bg) |
+| `mark-transparent.png` | Site header (alpha) |
+| `og.png` | Website Open Graph + README banner |
+| `logo.png` / `logo-transparent.png` | Wordmark lockups |
 | `avatar.png` | GitHub org avatar |
 | `github-social.jpg` | Repo **Social preview** (under 1 MB; GitHub’s limit) |
 

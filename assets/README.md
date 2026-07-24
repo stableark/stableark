@@ -1,18 +1,22 @@
 # Brand assets
 
-**Canonical mark:** ark/ship bow from the OG illustration (dark green on cream).
+**Canonical look:** the ark/ship bow with soft paint wash from `og.png`.
 
 Palette: cream `#f7f5f0`, forest green `#0b3d2e`.
 
 | File | Use |
 | --- | --- |
-| `og.png` | Website Open Graph / Twitter (`index.html` meta tags) |
-| `og.jpg` | Lighter alternate OG |
-| `github-social.jpg` | GitHub repo Social preview upload (**under 1 MB**) |
-| `mark.png` | Primary mark; site favicon / header |
+| `og.png` | Website OG/Twitter + **GitHub README** banner (full quality) |
+| `og.jpg` | Lighter OG alternate |
+| `github-social.jpg` | Repo Social preview upload (high-quality JPEG, under 1 MB) |
+| `mark.png` | Mark on cream (favicon source, apple-touch) |
+| `mark-transparent.png` | Mark with alpha — **site header** |
+| `logo.png` | Wordmark lockup on cream |
+| `logo-transparent.png` | Wordmark with alpha |
 | `avatar.png` | GitHub org avatar (cream ship on green) |
-| `logo.png` | Wordmark lockup (README) |
-| `favicon-16.png` / `favicon-32.png` / `apple-touch-icon.png` | Favicon sizes |
+| `favicon-16.png` / `favicon-32.png` / `apple-touch-icon.png` | Favicons from `mark.png` |
+
+Do **not** palette-quantize these for “small files” — prefer JPEG (`github-social.jpg`) when a size cap matters.
 
 ## GitHub (manual — no public API)
 

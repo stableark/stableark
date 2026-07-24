@@ -1,7 +1,7 @@
 # Stable Ark
 
 <p align="center">
-  <img src="assets/logo.png" alt="Stable Ark" width="420">
+  <img src="assets/og.png" alt="Stable Ark — Dollar-indexed bitcoin on Ark VTXOs" width="640">
 </p>
 
 Self-custodial, dollar-denominated balances on Bitcoin using Ark-family VTXOs.
